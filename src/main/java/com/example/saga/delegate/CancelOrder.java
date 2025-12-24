@@ -1,5 +1,6 @@
 package com.example.saga.delegate;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
@@ -28,8 +29,10 @@ public class CancelOrder {
 
 	          System.out.println("cancel_order job received");
 	          try {
-	          Integer orderId=Integer.parseInt( job.getVariablesAsMap().get("orderId").toString());
-	          response=restTemplate.postForObject("http://localhost:9191/order/cancelOrder", orderId, Map.class);
+	          String orderId= (String) job.getVariablesAsMap().get("orderId");
+	          Map<String,Object> requestMap=new HashMap<>();
+	          requestMap.put("orderUid", orderId);
+	          response=restTemplate.postForObject("http://localhost:9191/order-service/order/cancelOrder", requestMap, Map.class);
 	          System.out.println("Order Cancelled receieved"+response);
 	          }
 	          catch(Exception ex) {

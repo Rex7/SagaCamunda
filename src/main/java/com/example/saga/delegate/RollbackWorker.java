@@ -14,6 +14,8 @@ public class RollbackWorker {
 	private final ZeebeClient client;
 	private final WebClient webClient;
 	private final RestTemplate restTemplate;
+	Integer paymentId;
+	String orderId;
 
 	public RollbackWorker(ZeebeClient client, WebClient webClient,RestTemplate restTemplate) {
 		this.client = client;
@@ -27,12 +29,29 @@ public class RollbackWorker {
 		client.newWorker().jobType("rollback") // MUST match BPMN
 				.handler((client, job) -> {
 					String response;
-					Integer paymentId = (Integer) job.getVariablesAsMap().get("paymentId");
-					String paymentStatus = (String) job.getVariablesAsMap().get("payment_status");
-					System.out.println("rollback job received"+paymentId);
-			          response=restTemplate.postForObject("http://localhost:9191/payment/paymnetRefund", 2, String.class);
-					
-					client.newCompleteCommand(job.getKey()).variables("{\"orderstatus\": true}").send().join();
+					orderId=(String) job.getVariablesAsMap().get("orderId");
+					String paymentID_=(String) job.getVariablesAsMap().get("paymentId");
+					if(!"null".equalsIgnoreCase(paymentID_)) {
+					 paymentId = (Integer) job.getVariablesAsMap().get("paymentId");
+						String paymentStatus = (String) job.getVariablesAsMap().get("payment_status");
+						System.out.println("rollback job received");
+				          response=restTemplate.postForObject("http://localhost:9191/payment-service/payment/paymnetRefund", paymentId, String.class);
+						
+						client.newCompleteCommand(job.getKey()).variables("{\"orderstatus\": true}").send().join();
+				
+					}
+					else {
+						client.newCompleteCommand(job.getKey())
+			              
+			              .variables(Map.of(
+			                      "paymentId", paymentId==null?"null":paymentId,
+			                      "orderId",orderId,
+			                      "payment_status", "FAILED"
+			                  ))
+			
+			              .send()
+			              .join();
+					}
 				}).open();
 
 		System.out.println("Worker registered for rollback");

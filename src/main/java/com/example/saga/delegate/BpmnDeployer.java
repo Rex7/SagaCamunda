@@ -16,11 +16,17 @@ public class BpmnDeployer {
 
   @PostConstruct
   public void deploy() {
+	  try {
     client.newDeployResourceCommand()
         .addResourceFromClasspath("orderPayment.bpmn")
         .send()
         .join();
+	  System.out.println("BPMN Deployment Successful");
 
-    System.out.println("BPMN deployed successfully");
+	  }
+	  catch(Exception ex) {
+		  System.out.println("BPMN Deployment Failed");
+		  ex.printStackTrace();
+	  }
   }
 }

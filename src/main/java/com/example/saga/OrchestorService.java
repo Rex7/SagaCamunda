@@ -1,6 +1,9 @@
 package com.example.saga;
 
+import java.util.Map;
+
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -16,11 +19,12 @@ public class OrchestorService {
 	}
 	
 	@PostMapping("/startWorkflow")
-	public String startOrderpaymentWorkFLow() {
+	public String startOrderpaymentWorkFLow(@RequestBody Map<String,Object> orderDetailsDTO) {
 		client
 		.newCreateInstanceCommand()
 		.bpmnProcessId("OrderPayment")
 		.latestVersion()
+		.variables(orderDetailsDTO)
 		.send();
 		return "Workflow started";
 	}

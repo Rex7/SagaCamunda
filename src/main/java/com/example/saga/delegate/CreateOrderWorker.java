@@ -1,10 +1,15 @@
 package com.example.saga.delegate;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import com.example.saga.dto.order.OrderDetailsDTO;
+import com.example.saga.dto.order.OrderResponseDTO;
 
 import io.camunda.zeebe.client.ZeebeClient;
 import jakarta.annotation.PostConstruct;
@@ -29,23 +34,31 @@ public class CreateOrderWorker  {
 	    client.newWorker()
 	        .jobType("create_order")   // MUST match BPMN
 	        .handler((client, job) -> {
-	        	Map<String,Object> response=null;
-	        	String orderIdUpdated=(String) job.getVariablesAsMap().get("orderId");
+	        	OrderResponseDTO response = null;
+	        	OrderDetailsDTO requestDTO=new OrderDetailsDTO();
+	        	Integer amount=(Integer) job.getVariablesAsMap().get("amount");
+	        	List<Integer> productList= (List<Integer>) job.getVariablesAsMap().get("productList");
+	        	String userId=(String) job.getVariablesAsMap().get("userId");
+	        	requestDTO.setProductList(productList);
+	        	requestDTO.setAmount(new BigDecimal(amount));
+	        	requestDTO.setUserId(userId);
+
 	          System.out.println("create_order job received");
 	          try {
-	          response=restTemplate.postForObject("http://localhost:9191/order/createOrder", "01", Map.class);
+	          response=restTemplate.postForObject("http://localhost:9191/order-service/order/createOrder", requestDTO, OrderResponseDTO.class);
 	          System.out.println("response receieved"+response);
 	          }
 	          catch(Exception ex) {
 	        	  System.out.println("exception occured"+ex.getMessage());
 	          }
 	          boolean orderstatus =false;
-	          String orderStat=response.get("orderStatus").toString();
+	          String orderStat=response.getOrderStatus();
 	          if("created".equalsIgnoreCase(orderStat)) {
 	        	  orderstatus=true;
 	          }
 	          client.newCompleteCommand(job.getKey())
-	              .variables(Map.of("orderStatus",orderstatus,"orderId","11"))
+	              .variables(Map.of("orderStatus",orderstatus,"orderId",response.getOrderId(),"debitAmount",new BigDecimal(amount),
+	            		  "payment_status","null","paymentId","null"))
 	              .send()
 	              .join();
 	        })
