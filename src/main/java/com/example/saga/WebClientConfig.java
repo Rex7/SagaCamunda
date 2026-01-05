@@ -1,6 +1,7 @@
 package com.example.saga;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -17,4 +18,5 @@ public class WebClientConfig {
 		return new RestTemplate();
 	}
 
+	
 }
